@@ -1,0 +1,29 @@
+texture.png
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+
+frame1
+  xy: 10, 10
+  size: 80, 80
+
+frame2
+  xy: 100, 10
+  size: 80, 80
+
+frame3
+  xy: 190, 10
+  size: 80, 80
+
+frame4
+  xy: 10, 100
+  size: 80, 80
+
+frame5
+  xy: 100, 100
+  size: 80, 80
+
+frame6
+  xy: 190, 100
+  size: 80, 80
+

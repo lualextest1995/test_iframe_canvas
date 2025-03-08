@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>動態 Atlas Canvas</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: #111;
+      }
+      canvas {
+        background: #222;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      canvas.width = 300;
+      canvas.height = 300;
+
+      let frames = [];
+      let currentFrame = 0;
+      let textureImage = new Image();
+      let firstLoad = true;
+
+      async function loadAtlas() {
+        // 讀取 JSON (比 .atlas 格式更簡單解析)
+        const response = await fetch("/assets/texture.json");
+        const jsonData = await response.json();
+        frames = jsonData.frames;
+
+        // 載入 PNG 紋理圖
+        textureImage.src = "/assets/texture.png";
+        textureImage.onload = () => {
+          requestAnimationFrame(animate);
+        };
+
+        sendCanvasDataToVue();
+
+        window.addEventListener("message", (event) => {
+          if (event.origin !== "http://localhost:5173") return;
+          if (event.data.type === "restore-canvas") {
+            const imageData = event.data.imageData;
+            ctx.putImageData(imageData, 0, 0);
+            console.log("Canvas data restored");
+          }
+        });
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 取得當前 frame
+        let frame = frames[currentFrame];
+        ctx.drawImage(
+          textureImage,
+          frame.x,
+          frame.y,
+          frame.width,
+          frame.height, // 紋理區域
+          100,
+          100,
+          frame.width,
+          frame.height // 繪製到 canvas 的位置
+        );
+
+        // 切換到下一張 frame
+        currentFrame = (currentFrame + 1) % frames.length;
+
+        setTimeout(() => requestAnimationFrame(animate), 200); // 200ms 切換一次
+      }
+
+      function sendCanvasDataToVue() {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        window.parent.postMessage(
+          {
+            type: "canvas-data",
+            imageData: imageData,
+          },
+          "*"
+        );
+      }
+
+      if (firstLoad) {
+        firstLoad = false;
+        loadAtlas();
+      }
+    </script>
+  </body>
+</html>
